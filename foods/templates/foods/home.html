@@ -1,0 +1,219 @@
+<!-- foods/templates/foods/home.html -->
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Calorie Counter</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="#">Calorie Counter</a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav ms-auto">
+                    {% if user.is_authenticated %}
+                        <li class="nav-item">
+                            <span class="nav-link">Hi {{ user.username }}!</span>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'logout' %}">Logout</a>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'login' %}">Login</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'register' %}">Register</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="card shadow p-4 mt-5" style="min-width: 350px;">
+            <!-- Memo Section: Portion Size Guide -->
+            <div class="mb-4">
+                <div class="card bg-light border-0">
+                    <div class="card-body">
+                        <h4 class="card-title text-center mb-3">Portion Size Guide</h4>
+                        <div class="row text-center">
+                            <div class="col-md-3 mb-3">
+                                <img src="{% static 'foods/bowl.jpg' %}" alt="Bowl" class="img-fluid rounded mb-2" style="max-height:80px; max-width:80px; object-fit:cover;">
+                                <div><strong>Bowl</strong><br>~350g</div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <img src="{% static 'foods/plate.jpg' %}" alt="Plate" class="img-fluid rounded mb-2" style="max-height:80px; max-width:80px; object-fit:cover;">
+                                <div><strong>Plate</strong><br>~250g</div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <img src="{% static 'foods/tablespoon.jpg' %}" alt="Tablespoon" class="img-fluid rounded mb-2" style="max-height:80px; max-width:80px; object-fit:cover;">
+                                <div><strong>Tablespoon</strong><br>~15g</div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <img src="{% static 'foods/handful.jpg' %}" alt="Handful" class="img-fluid rounded mb-2" style="max-height:80px; max-width:80px; object-fit:cover;">
+                                <div><strong>Handful</strong><br>~30g</div>
+                            </div>
+                        </div>
+                        <div class="text-center mt-2">
+                            <small class="text-muted">*Values are approximate and may vary by food type.</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- End Memo Section -->
+            <h3 class="mb-3 text-center">Build Your Meal</h3>
+            <div class="mb-3">
+                <input type="text" id="food-search" class="form-control" placeholder="Search for food...">
+                <div id="search-results" class="list-group mt-1"></div>
+            </div>
+            <form id="meal-form" method="post">
+                {% csrf_token %}
+                <div id="selected-foods"></div>
+                <button type="submit" class="btn btn-success mt-3">Calculate Meal Calories</button>
+            </form>
+            {% if meal_result %}
+            <div class="alert alert-info mt-3">
+                <h5 class="mb-2">Meal Nutrition Total:</h5>
+                <ul class="mb-0">
+                    <li><strong>Calories:</strong> {{ meal_result.calories }} kcal</li>
+                    <li><strong>Protein:</strong> {{ meal_result.protein }} g</li>
+                    <li><strong>Fat:</strong> {{ meal_result.fat }} g</li>
+                    <li><strong>Carbs:</strong> {{ meal_result.carbs }} g</li>
+                    <li><strong>Fiber:</strong> {{ meal_result.fiber }} g</li>
+                </ul>
+            </div>
+            {% endif %}
+            <hr class="my-4">
+            <h2 class="mb-4 text-center">Search Food Calories Database (in table) </h2>
+            <form method="get" class="d-flex flex-column gap-3">
+                <input type="text" name="q" class="form-control" placeholder="Enter food name..." required>
+                <button type="submit" class="btn btn-primary">Search</button>
+            </form>
+            {% if messages %}
+                <ul class="mt-3">
+                    {% for message in messages %}
+                        <li class="alert alert-info">{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+            {% if calorie_count is not None %}
+                <div class="alert alert-success mt-4 text-center">
+                    <strong>{{ food_name }}</strong>: {{ calorie_count }} kcal
+                </div>
+            {% elif searched %}
+                <div class="alert alert-danger mt-4 text-center">
+                    Food not found.
+                </div>
+            {% endif %}
+
+            {% if results %}
+                <div class="mt-4" id="search-results-table">
+                    <h4>Search Results{% if query %} for "{{ query }}"{% endif %}:</h4>
+                    <button type="button" class="btn btn-outline-secondary btn-sm mb-2" id="clear-results-btn">Clear Results</button>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Image</th>
+                                    <th>Name</th>
+                                    <th>Calories (kcal)</th>
+                                    <th>Protein (g)</th>
+                                    <th>Fat (g)</th>
+                                    <th>Carbs (g)</th>
+                                    <th>Fiber (g)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in results %}
+                                <tr>
+                                    <td>
+                                        {% if item.image %}
+                                            <img src="{{ item.image.url }}" alt="{{ item.name }}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px;">
+                                        {% endif %}
+                                    </td>
+                                    <td><strong>{{ item.name }}</strong></td>
+                                    <td>{{ item.calories }}</td>
+                                    <td>{{ item.protein }}</td>
+                                    <td>{{ item.fat }}</td>
+                                    <td>{{ item.carbs }}</td>
+                                    <td>{{ item.fiber }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            {% endif %}
+            <hr class="my-4">
+            <script>
+            // Vanilla JS for dynamic meal builder
+            let selectedFoods = [];
+            document.getElementById('food-search').addEventListener('input', function() {
+                const query = this.value;
+                if (query.length < 2) {
+                    document.getElementById('search-results').innerHTML = '';
+                    return;
+                }
+                fetch(`/foods/search/?q=${encodeURIComponent(query)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        const resultsDiv = document.getElementById('search-results');
+                        resultsDiv.innerHTML = '';
+                        data.forEach(item => {
+                            const el = document.createElement('button');
+                            el.className = 'list-group-item list-group-item-action';
+                            el.textContent = item.name;
+                            el.onclick = function() {
+                                addFoodToMeal(item);
+                                resultsDiv.innerHTML = '';
+                                document.getElementById('food-search').value = '';
+                            };
+                            resultsDiv.appendChild(el);
+                        });
+                    });
+            });
+            function addFoodToMeal(item) {
+                if (selectedFoods.find(f => f.id === item.id)) return;
+                selectedFoods.push(item);
+                renderSelectedFoods();
+            }
+            function renderSelectedFoods() {
+                const container = document.getElementById('selected-foods');
+                container.innerHTML = '';
+                selectedFoods.forEach(food => {
+                    const row = document.createElement('div');
+                    row.className = 'input-group mb-2';
+                    row.innerHTML = `
+                        <span class="input-group-text">${food.name}</span>
+                        <input type="hidden" name="food_ids" value="${food.id}">
+                        <input type="number" name="qty_${food.id}" class="form-control" min="1" value="100" placeholder="Quantity (g)">
+                        <button type="button" class="btn btn-danger" onclick="removeFood(${food.id})">Remove</button>
+                    `;
+                    container.appendChild(row);
+                });
+            }
+            window.removeFood = function(id) {
+                selectedFoods = selectedFoods.filter(f => f.id !== id);
+                renderSelectedFoods();
+            }
+            // Clear Results Button functionality
+            document.addEventListener('DOMContentLoaded', function() {
+                var clearBtn = document.getElementById('clear-results-btn');
+                var resultsTable = document.getElementById('search-results-table');
+                var searchInput = document.querySelector('input[name="q"]');
+                if (clearBtn && resultsTable) {
+                    clearBtn.addEventListener('click', function() {
+                        resultsTable.style.display = 'none';
+                        if (searchInput) searchInput.value = '';
+                    });
+                }
+            });
+            </script>
+        </div>
+    </div>
+</body>
+</html>
