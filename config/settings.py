@@ -25,7 +25,12 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'vsca_r-0qdtsk1c0hj=a)vie!vv(b#
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['your-app-name.onrender.com', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = [
+    'calorie-tracker-project-8931.onrender.com',
+    'your-app-name.onrender.com',
+    'localhost',
+    '127.0.0.1'
+]
 
 
 # Application definition
