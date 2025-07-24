@@ -61,5 +61,5 @@ MIT
 
 ---
 
-**Developed by [Your Name]**
+**Developed by Nirtzy**
 
