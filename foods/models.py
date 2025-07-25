@@ -1,4 +1,7 @@
 from django.db import models
+from django.contrib.auth.models import User
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 
 class FoodItem(models.Model):
@@ -47,5 +50,33 @@ class FoodItem(models.Model):
         help_text="An optional image for the food item."
     )
 
+
+class UserProfile(models.Model):
+    """ Represents a user profile that extends the default Django User model.
+    This model can store additional information about the user, such as their bio or profile picture. """
+    user = models.OneToOneField(
+        'auth.User',
+        on_delete=models.CASCADE,
+        related_name='profile',
+        help_text="The user associated with this profile."
+    )
+    body_weight = models.FloatField(
+        null=True,
+        blank=True,
+        help_text="User's body weight in kilograms."
+    )
+    GOAL_CHOICES = [
+        ('lose', 'Lose Weight'),
+        ('mobility', 'Mobility / Functionality'),
+        ('gain', 'Gain Weight'),
+    ]
+    goal = models.CharField(
+        max_length=10,
+        choices=GOAL_CHOICES,
+        null=True,
+        blank=True,
+        help_text="User's fitness goal."
+    )
+
     def __str__(self):
-        return self.name
+        return self.user.username

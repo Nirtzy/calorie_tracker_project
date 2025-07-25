@@ -21,6 +21,12 @@ urlpatterns = [
 
     # AJAX food search endpoint
     path('foods/search/', food_views.food_search, name='food_search'),
+
+    # User profile page
+    path('profile/', food_views.profile, name='profile'),
+
+    # Diet suggestions page
+    path('diet_suggestions/', food_views.diet_suggestion, name='diet_suggestions'),
 ]
 
 if settings.DEBUG:

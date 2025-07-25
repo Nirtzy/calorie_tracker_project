@@ -4,6 +4,8 @@ from django.contrib.auth.forms import UserCreationForm # Import the form
 from django.contrib import messages
 from .models import FoodItem
 from django.http import JsonResponse
+from .forms import UserProfileForm
+from django.contrib.auth.decorators import login_required
 
 # Create your views here.
 
@@ -75,3 +77,52 @@ def food_search(request):
         items = FoodItem.objects.filter(name__icontains=q)[:10]
         results = [{'id': item.id, 'name': item.name} for item in items]
     return JsonResponse(results, safe=False)
+
+def get_personalized_suggestions(profile):
+    if not profile.body_weight:
+        return [{
+            'text': "Please enter your body weight in your profile to get personalized suggestions.",
+            'img': '/static/foods/profile.jpg'
+        }]
+    if profile.goal == 'lose':
+        return [{
+            'text': f"To lose weight, aim for a daily calorie deficit. Consider a target of 25-30 kcal per kg of body weight (e.g., {int(profile.body_weight*25)}-{int(profile.body_weight*30)} kcal/day).",
+            'img': '/static/foods/lose_weight.jpg'
+        }]
+    elif profile.goal == 'mobility':
+        return [{
+            'text': f"To support mobility and functionality, aim for a daily intake of about 30-35 kcal per kg of body weight (e.g., {int(profile.body_weight*30)}-{int(profile.body_weight*35)} kcal/day). Focus on balanced nutrition and regular movement.",
+            'img': '/static/foods/mobility.jpg'
+        }]
+    elif profile.goal == 'gain':
+        return [{
+            'text': f"To gain weight, aim for a daily calorie surplus. Consider a target of 35-40 kcal per kg of body weight (e.g., {int(profile.body_weight*35)}-{int(profile.body_weight*40)} kcal/day).",
+            'img': '/static/foods/gain_weight.jpg'
+        }]
+    else:
+        return [{
+            'text': "Set your goal in your profile to get personalized advice.",
+            'img': '/static/foods/profile.jpg'
+        }]
+
+def diet_suggestion(request):
+    if request.user.is_authenticated:
+        suggestions = get_personalized_suggestions(request.user.profile)
+    else:
+        suggestions = [{
+            'text': "Log in and complete your profile to get personalized diet suggestions.",
+            'img': '/static/foods/profile.jpg'
+        }]
+    return render(request, 'foods/diet_suggestion.html', {'suggestions': suggestions})
+
+@login_required
+def profile(request):
+    profile = request.user.profile
+    if request.method == 'POST':
+        form = UserProfileForm(request.POST, instance=profile)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Profile updated successfully!')
+    else:
+        form = UserProfileForm(instance=profile)
+    return render(request, 'foods/profile.html', {'form': form})

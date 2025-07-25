@@ -1,0 +1,18 @@
+{% extends 'foods/base.html' %}
+{% block title %}Diet Suggestions{% endblock %}
+{% block content %}
+    <h2>Diet Suggestions</h2>
+    <p>Based on your profile, here are your personalized diet suggestions:</p>
+    <div class="row">
+        {% for suggestion in suggestions %}
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <img src="{{ suggestion.img }}" class="card-img-top" alt="Suggestion image" style="max-height:200px; object-fit:cover;">
+                <div class="card-body">
+                    <p class="card-text">{{ suggestion.text }}</p>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+{% endblock %}
